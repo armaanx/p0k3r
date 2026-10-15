@@ -11,6 +11,12 @@ import { classifyBoard } from './texture';
 import {
   FACING_3BET, defendRanges_, hasDefendChart, openRange, positionOf,
 } from './preflopCharts';
+import { chartPercent, chartRange } from './pushFold';
+
+/** Heads-up push/fold: how much wider (>1) or tighter (<1) than the Nash charts each style shoves and calls. */
+const HU_PUSH_LEAN: Partial<Record<Archetype, [shove: number, call: number]>> = {
+  nit: [0.7, 0.7], tag: [1, 1], lag: [1.1, 1.05], station: [0.85, 1.4], maniac: [1.4, 1.25],
+};
 
 export type Archetype = 'nit' | 'station' | 'maniac' | 'tag' | 'lag';
 
@@ -209,6 +215,21 @@ function preflopDecision(s: HandState, pr: BotProfile, rng: Rng): RawDecision {
 
   // Short stack: push or fold.
   if (stackBB <= 12) {
+    if (headsUp) {
+      // Heads-up the push/fold Nash charts apply. Each style leans a little tighter or looser than the chart.
+      const opp = s.players.find((q) => q.inHand && q.seat !== seat)!;
+      const eff = Math.min(p.stack + p.bet, opp.stack + opp.bet) / bb;
+      const [shoveLean, callLean] = HU_PUSH_LEAN[pr.id] ?? [1, 1];
+      const lastRaise = [...s.actions].reverse().find((a) => a.street === 'preflop' && a.type === 'raise');
+      if (ctx.raises === 0 && pos !== 'BB') {
+        const r = shoveLean === 1 ? chartRange('shove', eff) : topPercent(Math.min(100, chartPercent('shove', eff) * shoveLean));
+        return has(r, label) ? { kind: 'raise', to: legal.maxRaiseTo } : { kind: 'fold' };
+      }
+      if (ctx.raises === 1 && pos === 'BB' && lastRaise?.allIn) {
+        const r = callLean === 1 ? chartRange('call', eff) : topPercent(Math.min(100, chartPercent('call', eff) * callLean));
+        return has(r, label) ? { kind: 'call' } : { kind: 'fold' };
+      }
+    }
     const shove = topPercent(stackBB <= 7 ? 32 : 20);
     if (ctx.raises === 0 || has(topPercent(stackBB <= 7 ? 14 : 10), label)) {
       return has(shove, label) ? { kind: 'raise', to: legal.maxRaiseTo } : legal.canCheck ? { kind: 'check' } : { kind: 'fold' };

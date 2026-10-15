@@ -755,3 +755,45 @@ describe('postflop review fixes (coach-postflop / lessons-c)', () => {
     expect(advise(s).breakEven).toBeCloseTo(10 / 120, 10);
   });
 });
+
+
+describe('heads-up push/fold (Nash charts)', () => {
+  // Heads-up, button 0 = small blind. Stacks in chips with blinds 50/100.
+  const hu = (hero: string, villain: string, stackBB: number): HandState => startS([hero, villain], 'Kd Js 3h Th 2s', [stackBB * 100, stackBB * 100], 0);
+
+  it('the button follows the shove chart at 10bb: K2o and 87s move all-in, 72o and 32o fold', () => {
+    for (const h of ['Kc2h', '8h7h']) {
+      const a = advise(hu(h, 'QcQd', 10));
+      expect(a.situation).toBe('short');
+      expect(a.recommended.action.type, h).toBe('allin');
+      expect(a.tier).toBe('standard');
+      expect(a.whyParts.map((w) => w.text).join(' ')).toMatch(/push\/fold chart for 10 big blinds/);
+    }
+    for (const h of ['7c2h', '3c2h']) expect(advise(hu(h, 'QcQd', 10)).recommended.cls, h).toBe('fold');
+  });
+
+  it('folding a clear chart shove is graded as a mistake; the loss is the chart EV edge', () => {
+    const s = hu('Ac5h', 'QcQd', 8);
+    const { a, g } = grade(s, { type: 'fold' });
+    expect(a.recommended.action.type).toBe('allin');
+    expect(MISTAKE_PLUS).toContain(g.verdict);
+    expect(g.lossBB).toBeGreaterThan(0.3);
+  });
+
+  it('close chart hands accept either answer (T3s near its 7.5bb limit)', () => {
+    const a = advise(hu('Th3h', 'QcQd', 7.5));
+    expect(a.acceptable).toContain('fold');
+    expect(a.acceptable).toContain('aggressive');
+  });
+
+  it('the big blind facing a 10bb button shove gets the calling chart as a reference, and the call math agrees with it', () => {
+    for (const [h, calls] of [['Ac7h', true], ['Kh9c', true], ['Qh6c', false], ['8h4c', false]] as const) {
+      let s = hu('9d9s', h, 10);
+      s = act(s, 'allin');
+      const a = advise(s);
+      expect(a.situation).toBe('vs-shove');
+      expect(a.whyParts.map((w) => w.text).join(' '), h).toMatch(/push\/fold chart for 10 big blinds calls with about 37%/);
+      expect(a.recommended.cls, h).toBe(calls ? 'passive' : 'fold');
+    }
+  });
+});

@@ -21,6 +21,7 @@ import {
 import { createRng, hashSeed } from '../rng';
 import { type Combo, type Range, comboCount, expandRange, rangePercent } from '../ranges';
 import { classifyBoard, type BoardTexture } from '../texture';
+import { chartDepth, chartEdgeBB, chartPercent, chartRange, inChart, isCloseCall } from '../pushFold';
 import { breakEvenEquity, effectiveStack, formatRatio, pct, streetSpr, winnablePot } from './odds';
 import { estimateOpponent, isShoveLike, narrowByStrength, shoveDepthBB, sortByStrength, type OppEstimate } from './oppRange';
 
@@ -462,21 +463,36 @@ function preflopAdvice(hand: HandState, opts: AdviceOptions): Advice {
     if (winPot < pot) why.push({ concept: 'pot-odds', text: `Only ${fmtChips(winPot)} of the ${fmtChips(pot)} in the pot can go to you: you are all-in for less, so the rest of their bet goes back to them.` });
     for (const q of pending) why.push({ concept: 'opponents', text: `${q.name} can still act behind you; if they call, your chances drop.` });
     if (!callMath && pending.length === 0) why.push({ concept: 'opponents', text: 'This one depends on how wide you think they shove: against a tighter or wider range the answer changes.' });
+    // Heads-up, the button shoved first in: cite the push/fold Nash calling chart as the reference answer.
+    const huDepth = shoveDepthBB(hand, shover);
+    if (headsUp && raisesBefore === 0 && shover.allIn && pos === 'BB' && huDepth <= 20) {
+      const calls = inChart('call', label, huDepth);
+      why.push({ concept: 'preflop-chart', text: `For reference, the heads-up push/fold chart for ${chartDepth(huDepth)} big blinds calls with about ${Math.round(chartPercent('call', huDepth))}% of hands, and ${label} ${calls ? 'is' : 'is not'} one of them. That chart assumes the button moves all-in with the right hands (about ${Math.round(chartPercent('shove', huDepth))}% of them).` });
+    }
     nudges.push({ concept: 'pot-odds', text: 'Someone has put you to a decision for your stack. Compare the price (what you risk against what you can win) with how often your hand wins against the hands they would do this with.' });
   } else if (sit === 'short') {
     concept = 'short-stack';
     tier = 'judgment';
     const firstIn = raises.length === 0;
     const raiserPosShort = !firstIn && raises.length === 1 && raiserPos ? raiserPos : undefined;
-    const shoveR = firstIn ? (limpers > 0 ? pushRange(pos, effBB * 1.4, true, headsUp) : pushRange(pos, effBB, true, headsUp)) : pushRange(pos, effBB, false, headsUp, raiserPosShort);
+    // Heads-up, first in from the button (small blind), no limp in front: the push/fold Nash chart applies exactly.
+    const huChart = headsUp && firstIn && limpers === 0 && pos !== 'BB';
+    const shoveR = huChart ? chartRange('shove', effBB) : firstIn ? (limpers > 0 ? pushRange(pos, effBB * 1.4, true, headsUp) : pushRange(pos, effBB, true, headsUp)) : pushRange(pos, effBB, false, headsUp, raiserPosShort);
     const f = (l: string): PreflopAction => ((shoveR.get(l) ?? 0) > 0 ? 'raise' : 'fold');
     const inRange = f(label) === 'raise';
-    const alts = neighbourActions(label, f);
-    verdict = { action: inRange ? 'raise' : 'fold', marginal: alts.length > 0, alternatives: alts, source: `Short-stack push/fold rule of thumb (${Math.round(effBB)} big blinds; about ${Math.round(rangePercent(shoveR))}% of hands ${firstIn ? 'from this seat' : `over a raise${raiserPosShort ? ` from ${raiserPosShort}` : ''}`})` };
+    const alts = huChart ? (isCloseCall('shove', label, effBB) ? [inRange ? 'fold' as const : 'raise' as const] : []) : neighbourActions(label, f);
+    verdict = huChart
+      ? { action: inRange ? 'raise' : 'fold', marginal: alts.length > 0, alternatives: alts, source: `Heads-up push/fold chart (Nash equilibrium, ${chartDepth(effBB)} big blinds: about ${Math.round(chartPercent('shove', effBB))}% of hands move all-in)` }
+      : { action: inRange ? 'raise' : 'fold', marginal: alts.length > 0, alternatives: alts, source: `Short-stack push/fold rule of thumb (${Math.round(effBB)} big blinds; about ${Math.round(rangePercent(shoveR))}% of hands ${firstIn ? 'from this seat' : `over a raise${raiserPosShort ? ` from ${raiserPosShort}` : ''}`})` };
+    if (huChart) { tier = 'standard'; concept = 'push-fold'; }
     recAction = inRange ? 'raise' : legal.canCheck ? 'check' : 'fold';
     const cut = cumulativeEquityCut(shoveR, 0) * 100;
     const raw = K_PRE * (u - cut) * 1.5;
-    if (inRange) evRaise = Math.max(raw, 0.05) * scale;
+    if (huChart) {
+      // A real chip-EV edge: shoving minus folding, against a big blind who calls by the chart.
+      const edge = chartEdgeBB('shove', label, effBB);
+      evRaise = inRange ? Math.max(edge, 0.02) : Math.min(edge, -0.02);
+    } else if (inRange) evRaise = Math.max(raw, 0.05) * scale;
     else evRaise = Math.min(raw, -0.1) * scale;
     // Flat-calling short is rarely right, but it can't cost much more than the chips it puts in.
     evCall = legal.canCheck ? 0 : Math.min(-0.1 * scale, Math.max(Math.min(evRaise, 0) - 0.1 * scale, -toCall / bb));
@@ -489,6 +505,14 @@ function preflopAdvice(hand: HandState, opts: AdviceOptions): Advice {
     const weakText = legal.canCheck ? 'is not strong enough to move all-in, so just check' : bbFlat ? 'is not strong enough to move all-in' : 'is too weak to risk your stack on';
     const opening = bbFlat ? `With only ${Math.round(effBB)} big blinds, most hands are either all-in or thrown away.` : `With only ${Math.round(effBB)} big blinds, you can't raise and then fold: hands are either all-in or thrown away.`;
     why.push({ concept: 'preflop-chart', text: `${opening} ${label} ${inRange ? 'is strong enough to move all-in' : weakText} from ${pos}${firstIn ? '' : ' after a raise'}.${bbFlat ? ' In the big blind facing a small raise you get a good price, so calling and seeing a flop is also fine.' : ''}` });
+    if (huChart) {
+      const edge = chartEdgeBB('shove', label, effBB);
+      const callPct = Math.round(chartPercent('call', effBB));
+      why.push({
+        concept: 'preflop-chart',
+        text: `Heads-up push/fold chart for ${chartDepth(effBB)} big blinds: against a big blind who calls correctly (about ${callPct}% of hands), moving all-in with ${label} earns about ${Math.abs(edge).toFixed(2)} big blinds ${edge >= 0 ? 'more' : 'less'} than folding.${alts.length ? ' That is very close, so either choice is fine.' : ''} The chart assumes you only move all-in or fold; strong players also limp or make small raises with some hands at this depth.`,
+      });
+    }
     nudges.push({ concept: 'basics', text: 'Your stack is short. With so few chips, the choice is usually all-in or fold. Is this hand strong enough to risk everything?' });
   } else if (sit === 'bb-option') {
     concept = 'position';

@@ -3,6 +3,7 @@
 // strategies) for teaching. Hands on a chart boundary are reported as `marginal` so grading can be generous.
 import { RANK_CHARS } from './cards';
 import { HAND_RANKING } from './handRankingData';
+import { chartPercent, chartRange, PF_MAX_BB } from './pushFold';
 import { type Range, ALL_LABELS, comboCount, gridLabel, parseRange, rangePercent } from './ranges';
 
 export type Position = 'UTG' | 'HJ' | 'CO' | 'BTN' | 'SB' | 'BB';
@@ -253,6 +254,11 @@ export function shoveRanges(pos: Position, depthBB: number, firstIn: boolean, he
   if (depthBB > DEEP_SHOVE_BB) {
     const r = firstIn ? DEEP_OPEN_SHOVE : DEEP_RESHOVE;
     return { ...r, percent: rangePercent(r.base) };
+  }
+  if (headsUp && firstIn && depthBB <= PF_MAX_BB) {
+    // Heads-up open shove from the button: the push/fold Nash chart, bracketed by tighter and looser players.
+    const p = chartPercent('shove', depthBB);
+    return { base: chartRange('shove', depthBB), tight: topRange(p * 0.6), wide: topRange(Math.min(100, p * 1.5)), percent: p };
   }
   const p = pushPercent(pos, depthBB, firstIn, headsUp, raiserPos);
   return { base: topRange(p), tight: topRange(p * 0.6), wide: topRange(Math.min(100, p * 1.7)), percent: p };
