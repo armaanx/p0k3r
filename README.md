@@ -27,7 +27,7 @@ Extra end-to-end checks per area (each takes the same path):
 EXTRA_CHECKS=scripts/checks/m4.mjs node scripts/verify-file-url.mjs   # a robot completes all 33 lessons
 ```
 
-`m3`…`m9` cover the coach, lessons, drills/SRS, review, progress/data, polish (fonts, themes, sound, reduced motion, tablet widths) and the About/accessibility checks.
+`m3`…`m10` cover the coach, lessons, drills/SRS, review, progress/data, polish (fonts, themes, sound, reduced motion, tablet widths) and the About/accessibility checks; `m10` checks phones and tablets (touch emulation, portrait and landscape: no sideways scrolling, 40 px touch targets, menu, table and seats on screen, raise and cancel by touch, glossary by tap).
 
 Debug: add `?debug` to the URL to expose `window.__p0k3r` test hooks (used only by the robot scripts).
 
@@ -90,7 +90,7 @@ The coach compares three action classes: fold, passive (check/call) and aggressi
 ## Verification performed
 
 - `npm test`: 636 tests across 23 files: exhaustive 5-card hand frequency check plus a naive-evaluator cross-check, side pots and odd chips, min-raise/incomplete-raise rules, a 12,000-hand bot simulation (chip conservation), a 20,000-hand fuzz run, equity against known values (e.g. AKs vs QQ ≈ 46/54), outs, charts, coach advice fuzzing on 150 bot hands, SRS, analytics, content lint, storage/export/import, WCAG contrast of the palette, and a scan that no UI file uses a colour outside the palette.
-- `scripts/checks/m3…m9`, run against `dist/index.html` over `file://` in headless Chrome: the coach flow, all 33 lessons played by a robot, drills/SRS/calibration, review, progress/data roundtrip, fonts loaded, the design rules on every screen (no shadows, glow or gradients; at most one inverted element), sound off by default, reduced motion, no horizontal overflow at tablet width (820 px) on every screen, skip link, accessible names on every route, visible focus, zero network requests and zero console errors.
+- `scripts/checks/m3…m10`, run against `dist/index.html` over `file://` in headless Chrome: the coach flow, all 33 lessons played by a robot, drills/SRS/calibration, review, progress/data roundtrip, fonts loaded, the design rules on every screen (no shadows, glow or gradients; at most one inverted element), sound off by default, reduced motion, no horizontal overflow at tablet width (820 px) on every screen, skip link, accessible names on every route, visible focus, zero network requests and zero console errors.
 - A Firefox file:// smoke test (via Playwright's Firefox): app loads, a hand deals, keyboard play, all main routes open, no errors or network requests.
 - Screenshots at desktop (1360 px), tablet (820 px) and large-cards mode were inspected by eye.
 
