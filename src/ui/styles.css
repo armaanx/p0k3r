@@ -54,13 +54,20 @@ body {
   font-family: var(--font-ui);
   font-size: 1rem;
   background-color: var(--paper);
-  background-image: var(--vignette), var(--grain-fine), var(--grain-mottle);
-  background-attachment: fixed, fixed, fixed;
   color: var(--ink);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   line-height: 1.55;
 }
+/* The grain and vignette live on one fixed layer behind the page. A fixed *background* repaints the whole viewport on every
+   scroll frame (janky, and ignored by iOS Safari); a composited fixed layer does not. */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; contain: strict;
+  background-image: var(--vignette), var(--grain-fine), var(--grain-mottle);
+  transform: translateZ(0);
+}
+@media print { body::before { display: none; } }
+html { scroll-padding-top: 76px; scroll-padding-bottom: 24px; }
 h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.005em; line-height: 1.12; margin: 0 0 0.5em; color: var(--ink); }
 h1 { font-size: 2.6rem; }
 h2 { font-size: 1.7rem; }
@@ -102,7 +109,7 @@ button { font-family: inherit; }
 .topbar {
   display: flex; align-items: center; gap: 1.5rem; padding: 0.7rem 1.5rem; flex-wrap: wrap;
   border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20;
-  background-color: var(--paper); background-image: var(--grain-fine), var(--grain-mottle); background-attachment: fixed, fixed;
+  background-color: var(--paper); background-image: var(--grain-fine);
 }
 .brand { font-family: var(--font-display); font-size: 1.65rem; letter-spacing: 0.01em; color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 0.55rem; line-height: 1; }
 .brand svg { width: 24px; height: 24px; }
@@ -219,7 +226,7 @@ button { font-family: inherit; }
 .bubble-below, .seat-hero .bubble-below { bottom: auto; top: calc(100% + 3px); }
 .bubble-aggr { border-color: var(--ink); }
 .bubble-win { color: var(--good); border-color: color-mix(in srgb, var(--good) 60%, transparent); }
-.bet { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 0.3rem; z-index: 2; animation: pop-in-center 0.2s var(--ease); }
+.bet { position: absolute; transform: translate(-50%, -50%); width: max-content; white-space: nowrap; display: flex; align-items: center; gap: 0.3rem; z-index: 2; animation: pop-in-center 0.2s var(--ease); }
 .bet-amount { background: var(--paper); color: var(--ink); padding: 0.05rem 0.4rem; border-radius: var(--r-tag); border: 1px solid var(--line); font-size: 0.74rem; }
 .dealer-btn {
   position: absolute; left: -0.4rem; top: -0.5rem; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: var(--paper); color: var(--ink);
@@ -731,7 +738,7 @@ img, svg, canvas { max-width: 100%; }
   .topbar > .btn-ghost { order: 1; }
   .topbar > .nav-toggle { display: inline-flex; order: 2; }
   .nav { order: 3; flex: 1 1 100%; display: none; flex-direction: column; flex-wrap: nowrap; gap: 0; border-top: 1px solid var(--line); margin-top: 0.15rem; }
-  .nav.nav-open { display: flex; }
+  .nav.nav-open { display: flex; max-height: calc(100vh - 84px); max-height: calc(100dvh - 84px); overflow-y: auto; overscroll-behavior: contain; }
   .nav a { padding: 0.85rem 0.5rem; border-bottom: 1px solid var(--line); border-left: 2px solid transparent; font-size: 1.02rem; display: flex; align-items: center; justify-content: space-between; }
   .nav a[aria-current='page'] { border-bottom-color: var(--line); border-left-color: var(--ink); padding-left: 0.9rem; }
   .main { padding: 1.25rem max(1rem, env(safe-area-inset-right)) 2rem max(1rem, env(safe-area-inset-left)); }
@@ -839,6 +846,7 @@ img, svg, canvas { max-width: 100%; }
     padding: 0.6rem max(1rem, env(safe-area-inset-right)) calc(0.6rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
     background-color: var(--paper); background-image: var(--grain-fine); border-top: 1px solid var(--line); gap: 0.55rem;
   }
+  html { scroll-padding-bottom: 150px; }
   .action-buttons { gap: 0.5rem; }
   .btn { padding: 0.7rem 0.5rem; justify-content: center; font-size: 1rem; min-height: 56px; }
   .btn kbd { display: none; }

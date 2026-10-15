@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StoreProvider, useStore } from '../state/store';
 import { CardDefs } from './cards/PlayingCard';
 import { useRoute } from './router';
@@ -42,6 +42,16 @@ function Shell() {
   }, [s.textScale, s.reducedMotion]);
 
   const path = route.split('?')[0]!;
+
+  // A new page starts at the top (a hash link does not reset scroll by itself), and keyboard focus moves into it.
+  // Query-only changes keep the position. The first render is left alone so a reload keeps its scroll place.
+  const firstRoute = useRef(true);
+  useEffect(() => {
+    if (firstRoute.current) { firstRoute.current = false; return; }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    const main = document.getElementById('main');
+    if (main && !main.contains(document.activeElement)) main.focus({ preventScroll: true });
+  }, [path]);
 
   // Close the phone menu after navigating, and on Escape.
   useEffect(() => { setNavOpen(false); }, [route]);

@@ -33,7 +33,7 @@ export default async function ({ page, check, url }) {
   await page.getByLabel('Sound effects (off by default)').uncheck();
 
   // Graphite & Grain: dark grainy paper, no shadows, no glow, at most one inverted (bone) element per screen.
-  const paper = await page.evaluate(() => ({ bg: getComputedStyle(document.body).backgroundColor, img: getComputedStyle(document.body).backgroundImage }));
+  const paper = await page.evaluate(() => ({ bg: getComputedStyle(document.body).backgroundColor, img: getComputedStyle(document.body, '::before').backgroundImage }));
   check(`background is the warm near-black paper (${paper.bg})`, paper.bg === 'rgb(20, 19, 15)');
   check('background carries the paper grain texture', /feTurbulence/.test(paper.img));
   // Text size + four colour + large cards
