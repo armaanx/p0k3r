@@ -11,6 +11,7 @@ import { CardBack, PlayingCard } from '../cards/PlayingCard';
 import { ChipStack } from '../chips/Chips';
 import type { Features } from '../features';
 import { Icon } from '../Icon';
+import { NARROW_QUERY, useMedia } from '../useMedia';
 
 export interface TableProps {
   hand: HandState;
@@ -34,19 +35,30 @@ export interface TableProps {
 }
 
 const CENTER = { x: 50, y: 46 };
+/** Phones in portrait get a tall oval so six seats, the board and the pot all fit without shrinking cards below legibility. */
+const CENTER_COMPACT = { x: 50, y: 47 };
+export const TABLE_ASPECT = 1.62;
+export const TABLE_ASPECT_COMPACT = 0.86;
 
-export function seatCoords(rel: number, n: number): { x: number; y: number } {
+export function seatCoords(rel: number, n: number, compact = false): { x: number; y: number } {
   const theta = (90 + (rel * 360) / n) * (Math.PI / 180);
-  return { x: 50 + 43 * Math.cos(theta), y: 46 + 39 * Math.sin(theta) };
+  return compact
+    ? { x: 50 + 36 * Math.cos(theta), y: 50 + 37 * Math.sin(theta) }
+    : { x: 50 + 43 * Math.cos(theta), y: 46 + 39 * Math.sin(theta) };
 }
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
-const POT_POS = { x: CENTER.x, y: CENTER.y - 9 };
+const potPos = (compact: boolean): { x: number; y: number } => {
+  const c = compact ? CENTER_COMPACT : CENTER;
+  return { x: c.x, y: c.y - (compact ? 12 : 9) };
+};
 
-function betSpot(rel: number, n: number, isHero: boolean): { x: number; y: number } {
-  const pos = seatCoords(rel, n);
-  return isHero ? { x: pos.x + 15, y: pos.y - 7 } : { x: lerp(pos.x, CENTER.x, 0.42), y: lerp(pos.y, CENTER.y + 4, 0.42) };
+function betSpot(rel: number, n: number, isHero: boolean, compact = false): { x: number; y: number } {
+  const pos = seatCoords(rel, n, compact);
+  const c = compact ? CENTER_COMPACT : CENTER;
+  if (isHero) return compact ? { x: pos.x + 22, y: pos.y - 14 } : { x: pos.x + 15, y: pos.y - 7 };
+  return { x: lerp(pos.x, c.x, compact ? 0.5 : 0.42), y: lerp(pos.y, c.y + 4, compact ? 0.5 : 0.42) };
 }
 
 interface Ghost {
@@ -75,6 +87,9 @@ function lastActionLabel(hand: HandState, seat: number, fmt: (n: number) => stri
 
 export function Table({ hand, session, heroSeat, settings, features, fmt, revealAll, highlight, dimOthers, winners, seatExtra, showArchetypes }: TableProps) {
   const n = hand.players.length;
+  const compact = useMedia(NARROW_QUERY);
+  const center = compact ? CENTER_COMPACT : CENTER;
+  const aspect = compact ? TABLE_ASPECT_COMPACT : TABLE_ASPECT;
   const bigCards = settings.largeCards;
   const heroW = bigCards ? 96 : 76;
   const oppW = bigCards ? 62 : 46;
@@ -99,13 +114,13 @@ export function Table({ hand, session, heroSeat, settings, features, fmt, reveal
     const added: Ghost[] = [];
     if (p && p.key === key) {
       if (p.street !== hand.street && p.bets.length) {
-        for (const b of p.bets) added.push({ id: `${key}-${p.street}-${b.seat}`, from: betSpot((b.seat - heroSeat + n) % n, n, b.seat === heroSeat), to: POT_POS, amount: b.amount });
+        for (const b of p.bets) added.push({ id: `${key}-${p.street}-${b.seat}`, from: betSpot((b.seat - heroSeat + n) % n, n, b.seat === heroSeat, compact), to: potPos(compact), amount: b.amount });
       }
       if (hand.result && !p.over) {
         // Each winner's chips fly from the pot: the sum of what they were awarded across all pots.
         const won = new Map<number, number>();
         for (const pot of hand.result.pots) for (const a of pot.awards) won.set(a.seat, (won.get(a.seat) ?? 0) + a.amount);
-        for (const [w, amount] of won) added.push({ id: `${key}-win-${w}`, from: POT_POS, to: seatCoords((w - heroSeat + n) % n, n), amount });
+        for (const [w, amount] of won) added.push({ id: `${key}-win-${w}`, from: potPos(compact), to: seatCoords((w - heroSeat + n) % n, n, compact), amount });
       }
     }
     prev.current = { key, street: hand.street, bets: hand.players.filter((x) => x.bet > 0).map((x) => ({ seat: x.seat, amount: x.bet })), pot: potTotal(hand), over };
@@ -120,7 +135,7 @@ export function Table({ hand, session, heroSeat, settings, features, fmt, reveal
   }, [hand]);
 
   return (
-    <div className="table-wrap" role="group" aria-label="Poker table" style={{ ['--k' as string]: bigCards ? 1.25 : 1 }}>
+    <div className="table-wrap" role="group" aria-label="Poker table" data-compact={compact ? 'true' : undefined} style={{ ['--k' as string]: bigCards ? 1.25 : 1, ['--aspect' as string]: aspect }}>
       <div className="felt">
         <div className="felt-rim" />
         <div className="felt-surface" />
@@ -128,7 +143,7 @@ export function Table({ hand, session, heroSeat, settings, features, fmt, reveal
       </div>
 
       {/* Community cards and pot */}
-      <div className="board-area" style={{ left: `${CENTER.x}%`, top: `${CENTER.y}%` }}>
+      <div className="board-area" style={{ left: `${center.x}%`, top: `${center.y}%` }}>
         <div className="pot" aria-live="polite">
           <ChipStack amount={pot} size={22} />
           <span className="pot-label">Pot</span>
@@ -155,7 +170,7 @@ export function Table({ hand, session, heroSeat, settings, features, fmt, reveal
           key={g.id}
           className="ghost-chips"
           aria-hidden="true"
-          style={{ left: `${g.from.x}%`, top: `${g.from.y}%`, ['--dx' as string]: `${g.to.x - g.from.x}`, ['--dy' as string]: `${(g.to.y - g.from.y) / 1.62}` }}
+          style={{ left: `${g.from.x}%`, top: `${g.from.y}%`, ['--dx' as string]: `${g.to.x - g.from.x}`, ['--dy' as string]: `${(g.to.y - g.from.y) / aspect}` }}
         >
           <ChipStack amount={g.amount} size={20} />
         </div>
@@ -164,14 +179,14 @@ export function Table({ hand, session, heroSeat, settings, features, fmt, reveal
       {/* Seats */}
       {hand.players.map((p) => {
         const rel = (p.seat - heroSeat + n) % n;
-        const pos = seatCoords(rel, n);
+        const pos = seatCoords(rel, n, compact);
         const isHero = p.seat === heroSeat;
         const setup = session.seats[p.seat]!;
         const profile = setup.archetype ? PROFILES[setup.archetype] : null;
         const show = isHero || (revealAll && !p.folded && p.inHand);
         const label = lastActionLabel(hand, p.seat, fmt);
         const position = positionOf(p.seat, hand.button, n);
-        const betPos = betSpot(rel, n, isHero);
+        const betPos = betSpot(rel, n, isHero, compact);
         const topSeat = pos.y < 22;
         const isWinner = !!winners?.includes(p.seat);
         const cardW = isHero ? heroW : oppW;

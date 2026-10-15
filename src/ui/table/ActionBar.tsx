@@ -134,6 +134,7 @@ export function ActionBar({ legal, seat, bb, street, fmt, onAction, keysEnabled,
               </button>
             ))}
             <button className="chip-btn" onClick={() => setAmount(legal.maxRaiseTo)} aria-keyshortcuts={String(quick.length + 1)}>All-in</button>
+            <button className="chip-btn chip-cancel" onClick={() => setRaising(false)}>Cancel</button>
             <span className="kbd-hint">↑↓ adjust · Enter confirm · Esc cancel</span>
           </div>
         </div>
