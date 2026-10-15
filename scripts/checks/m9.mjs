@@ -29,6 +29,7 @@ export default async ({ page, check, url }) => {
 
   // Keyboard-only focus visibility: tab through nav, focused element must have a visible outline/box-shadow
   await page.goto(url + '#/about');
+  await page.reload(); // start from a fresh document so focus begins at the top
   await page.keyboard.press('Tab');
   await page.keyboard.press('Tab');
   const vis = await page.evaluate(() => {

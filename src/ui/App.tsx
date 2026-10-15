@@ -12,7 +12,9 @@ import { ReviewScreen } from './screens/ReviewScreen';
 import { ProgressScreen } from './screens/ProgressScreen';
 import { AboutScreen } from './screens/About';
 import { dueCount } from '../engine/learning/srs';
-import { Icon } from './Icon';
+import { GithubMark, Icon } from './Icon';
+
+const REPO_URL = 'https://github.com/armaanx/p0k3r';
 
 const NAV: { to: string; label: string }[] = [
   { to: '/', label: 'Home' },
@@ -61,6 +63,11 @@ function Shell() {
       <main className="main" id="main" tabIndex={-1}>
         {path === '/play' ? <PlayScreen /> : path.startsWith('/learn') ? <LearnScreen sub={path.slice('/learn'.length)} /> : path === '/reference' ? <ReferenceScreen /> : path === '/drills' ? <DrillsScreen /> : path === '/progress' ? <ProgressScreen /> : path === '/about' ? <AboutScreen /> : path.startsWith('/review') ? <ReviewScreen sub={path.slice('/review'.length)} /> : !progress.firstRunDone && progress.hands.length === 0 && Object.keys(progress.lessons).length === 0 ? <Welcome /> : <Home />}
       </main>
+      <footer className="site-footer">
+        <a href={REPO_URL} target="_blank" rel="noopener noreferrer" aria-label="p0k3r source code on GitHub (opens in a new tab)">
+          <GithubMark /> <span>armaanx/p0k3r</span>
+        </a>
+      </footer>
     </div>
   );
 }
