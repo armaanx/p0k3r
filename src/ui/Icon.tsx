@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 /** Custom thin line icons (24 x 24 grid, 1.5px strokes, rounded caps and joins). No icon font, no emoji. */
 export type IconName =
   | 'check' | 'cross' | 'alert' | 'lock' | 'gear' | 'arrow-left' | 'arrow-right' | 'skip-start' | 'skip-end'
-  | 'chev-left' | 'chev-right' | 'star' | 'star-fill' | 'approx' | 'info' | 'dot' | 'close' | 'play' | 'flag' | 'spark';
+  | 'chev-left' | 'chev-right' | 'star' | 'star-fill' | 'approx' | 'info' | 'dot' | 'close' | 'play' | 'flag' | 'spark' | 'menu';
 
 const PATHS: Record<IconName, ReactNode> = {
   check: <path d="M5 12.5l4.2 4.2L19 7" />,
@@ -47,6 +47,7 @@ const PATHS: Record<IconName, ReactNode> = {
   play: <path d="M8 5.5v13l10.5-6.5z" />,
   flag: <path d="M6 20V4.5M6 5h10.5l-2 4 2 4H6" />,
   spark: <path d="M12 4v4M12 16v4M4 12h4M16 12h4" />,
+  menu: <path d="M5 7.5h14M5 12h14M5 16.5h14" />,
 };
 
 /** GitHub mark (Octicons "mark-github", MIT). Solid glyph on a 16 x 16 grid, drawn in currentColor. */
