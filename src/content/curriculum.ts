@@ -2,9 +2,10 @@ import type { Progress } from '../state/types';
 import { LESSONS_A } from './lessons-a';
 import { LESSONS_B } from './lessons-b';
 import { LESSONS_C } from './lessons-c';
+import { LESSONS_D } from './lessons-d';
 import type { Lesson, ModuleDef, QuizItem, Step } from './types';
 
-export const LESSONS: Lesson[] = [...LESSONS_A, ...LESSONS_B, ...LESSONS_C];
+export const LESSONS: Lesson[] = [...LESSONS_A, ...LESSONS_B, ...LESSONS_C, ...LESSONS_D];
 export const LESSON_BY_ID: ReadonlyMap<string, Lesson> = new Map(LESSONS.map((l) => [l.id, l]));
 
 export const MODULES: ModuleDef[] = [
@@ -18,6 +19,7 @@ export const MODULES: ModuleDef[] = [
   { id: 7, title: 'Opponents', blurb: 'Four kinds of players, the two statistics that reveal them, and how to adjust.', lessons: ['m7-l1', 'm7-l2', 'm7-l3'], concepts: ['player-types', 'exploits'], unlocks: ['opponents'] },
   { id: 8, title: 'Intermediate ideas', blurb: 'Implied odds, minimum defence, stack-to-pot ratio, semi-bluffs and river decisions.', lessons: ['m8-l1', 'm8-l2', 'm8-l3', 'm8-l4'], concepts: ['implied-odds', 'reverse-implied', 'mdf', 'spr', 'semi-bluff', 'thin-value', 'river'], unlocks: [] },
   { id: 9, title: 'The mental game', blurb: 'Variance, tilt, bankroll, and judging decisions instead of results.', lessons: ['m9-l1', 'm9-l2', 'm9-l3'], concepts: ['variance', 'bankroll', 'tilt', 'results-thinking'], unlocks: [] },
+  { id: 10, title: 'Short stacks and real games', blurb: 'Heads-up push or fold with solved charts, and how rake changes the price of a call.', lessons: ['m10-l1', 'm10-l2'], concepts: ['push-fold', 'rake'], unlocks: [] },
 ];
 
 export const MODULE_BY_ID: ReadonlyMap<number, ModuleDef> = new Map(MODULES.map((m) => [m.id, m]));

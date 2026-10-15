@@ -40,7 +40,7 @@ function ModuleMap() {
     <div>
       <div className="page-head">
         <h1>Learn</h1>
-        <p className="muted">Ten short modules, in an order that matters: mechanics first, then which hands to play, then the math after the flop. Each lesson is a few minutes. Finish a module test with 85% or better to unlock the next one.</p>
+        <p className="muted">Eleven short modules, in an order that matters: mechanics first, then which hands to play, then the math after the flop, and finally short stacks and rake. Each lesson is a few minutes. Finish a module test with 85% or better to unlock the next one.</p>
       </div>
       {next ? (
         <div className="card-panel continue-card">
@@ -163,7 +163,7 @@ function ModuleTestScreen({ moduleId }: { moduleId: number }) {
         <div className="worked-tag">Module {moduleId} test</div>
         <h2>{passed ? 'Module mastered' : 'Not quite yet'}</h2>
         <p className="big-score"><b className="num">{score}</b> / {items.length} <span className="muted small">(you need {need}, that is {Math.round(MASTERY_THRESHOLD * 100)}%)</span></p>
-        <p className="muted">{passed ? (moduleId < 9 ? `The next module is unlocked. The questions you missed will come back in your daily review.` : 'You have finished the whole path. From here, practise with the drills and play with the coach.') : 'Your missed questions are scheduled for review. Revisit the lessons you found hardest, then try a fresh test: it uses new questions.'}</p>
+        <p className="muted">{passed ? (moduleId < MODULES[MODULES.length - 1]!.id ? `The next module is unlocked. The questions you missed will come back in your daily review.` : 'You have finished the whole path. From here, practise with the drills and play with the coach.') : 'Your missed questions are scheduled for review. Revisit the lessons you found hardest, then try a fresh test: it uses new questions.'}</p>
         <div className="toolbar" style={{ justifyContent: 'flex-start' }}>
           {passed ? <button className="btn-primary" onClick={() => go('/learn')} ref={focusInView}>Back to the map</button> : (
             <>
@@ -209,7 +209,7 @@ function ModuleTestScreen({ moduleId }: { moduleId: number }) {
 const CONCEPT_OF_TYPE: Partial<Record<DrillType, string>> = {
   'hand-category': 'hand-rankings', 'rank-winner': 'hand-rankings', 'best-five': 'best-five', 'position-name': 'position', 'tier-place': 'hand-tiers',
   'open-fold': 'open-range', 'facing-raise': 'facing-raise', 'made-draw-air': 'hand-strength', 'board-texture': 'board-texture', outs: 'outs',
-  'pot-odds': 'pot-odds', 'equity-guess': 'equity', 'bet-size': 'bet-sizing', 'player-type': 'player-types', mdf: 'mdf', spr: 'spr',
+  'pot-odds': 'pot-odds', 'equity-guess': 'equity', 'bet-size': 'bet-sizing', 'player-type': 'player-types', mdf: 'mdf', spr: 'spr', 'push-fold': 'push-fold', rake: 'rake',
 };
 function sampleConcept(t: DrillType): string {
   return CONCEPT_OF_TYPE[t] ?? t;

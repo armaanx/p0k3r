@@ -112,7 +112,7 @@ export default async function ({ page, check, url }) {
   await page.goto(base + '?debug#/learn');
   await page.waitForSelector('.module-grid');
   const locked = await page.locator('.module-card.module-locked').count();
-  check(`modules 1–9 start locked until Module 0 is mastered (${locked} locked)`, locked === 9);
+  check(`modules 1–10 start locked until Module 0 is mastered (${locked} locked)`, locked === 10);
   await page.locator('section.module-card:has(#mod-2)').locator('button', { hasText: 'Skip ahead' }).click();
   check('skip-ahead shows an explicit warning', (await page.locator('.warn-box').innerText()).includes('Later modules assume you know the earlier ones'));
   await page.locator('.warn-box button', { hasText: 'Stay here' }).click();
@@ -142,17 +142,17 @@ export default async function ({ page, check, url }) {
   check('a module test with correct answers passes and masters the module', (await page.innerText('.outcome')).includes('Module mastered'));
   await page.goto(base + '?debug#/learn');
   await page.waitForSelector('.module-grid');
-  check('Module 1 is now unlocked (interleaving gate works)', (await page.locator('.module-card.module-locked').count()) === 8);
+  check('Module 1 is now unlocked (interleaving gate works)', (await page.locator('.module-card.module-locked').count()) === 9);
 
   // ---- Robot plays the rest of the path ----
-  const rest = ['m1-l1', 'm1-l2', 'm1-l3', 'm2-l1', 'm2-l2', 'm3-l1', 'm3-l2', 'm3-l3', 'm3-l4', 'm4-l1', 'm4-l2', 'm4-l3', 'm5-l1', 'm5-l2', 'm5-l3', 'm5-l4', 'm6-l1', 'm6-l2', 'm6-l3', 'm6-l4', 'm7-l1', 'm7-l2', 'm7-l3', 'm8-l1', 'm8-l2', 'm8-l3', 'm8-l4', 'm9-l1', 'm9-l2', 'm9-l3'];
+  const rest = ['m1-l1', 'm1-l2', 'm1-l3', 'm2-l1', 'm2-l2', 'm3-l1', 'm3-l2', 'm3-l3', 'm3-l4', 'm4-l1', 'm4-l2', 'm4-l3', 'm5-l1', 'm5-l2', 'm5-l3', 'm5-l4', 'm6-l1', 'm6-l2', 'm6-l3', 'm6-l4', 'm7-l1', 'm7-l2', 'm7-l3', 'm8-l1', 'm8-l2', 'm8-l3', 'm8-l4', 'm9-l1', 'm9-l2', 'm9-l3', 'm10-l1', 'm10-l2'];
   for (const id of rest) {
     await page.goto(base + `?debug#/learn/${id}`);
     const ok = await solveLesson(page, id, check);
     check(`lesson ${id} is playable end to end`, ok);
   }
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('p0k3r.v1')));
-  check('all 33 lessons recorded as done', Object.values(saved.lessons).filter((l) => l.done).length === 33, Object.keys(saved.lessons).length);
+  check('all 35 lessons recorded as done', Object.values(saved.lessons).filter((l) => l.done).length === 35, Object.keys(saved.lessons).length);
 
   // ---- Progressive disclosure on the table ----
   // (Saved state is injected before the app starts; the app flushes its own state when a page unloads.)

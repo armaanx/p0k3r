@@ -130,6 +130,13 @@ export const GLOSSARY: GlossaryTerm[] = [
   T('bankroll', 'Bankroll', 9, 'The money set aside for poker, kept separate from money you need for life.'),
   T('downswing', 'Downswing', 9, 'A long stretch of losses. It can happen through bad luck alone, even when you play well.'),
   T('results-thinking', 'Results-oriented thinking', 9, 'Judging a decision by how it turned out instead of by how good it was when you made it. The biggest trap in poker.'),
+  // ---- Module 10: short stacks and real games ----
+  T('push-fold', 'Push or fold', 10, 'A short-stack plan: move all-in or fold, nothing in between. With few chips, a normal raise leaves too little behind to fold, so it is all-in or nothing.'),
+  T('nash', 'Nash equilibrium', 10, 'A pair of strategies where neither player can win more by changing their own strategy alone. For heads-up push or fold it gives two charts: when the button moves all-in, and when the big blind calls.'),
+  T('effective-stack', 'Effective stack', 10, 'The smaller of the stacks in a hand, because nobody can win or lose more than that. Short-stack charts measure it in big blinds, before the blinds are posted.'),
+  T('rake', 'Rake', 10, "The house's cut of a cash-game pot, usually a percentage up to a maximum (the cap). It comes out of the pot the winner collects."),
+  T('rake-cap', 'Rake cap', 10, 'The most rake the house takes from one pot, however big the pot gets.'),
+  T('no-flop-no-drop', 'No flop, no drop', 10, 'A common rule in raked games: no rake is taken when the hand ends before the flop.'),
 ];
 
 export const GLOSSARY_BY_ID: ReadonlyMap<string, GlossaryTerm> = new Map(GLOSSARY.map((g) => [g.id, g]));

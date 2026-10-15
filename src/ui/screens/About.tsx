@@ -25,7 +25,7 @@ export function AboutScreen() {
         <h2 id="about-coach">How much to trust the coach</h2>
         <p>
           The coach is <b>not a solver</b>. Preflop advice comes from fixed, standard charts; the numbers it shows there are rough chart scores, not true expected values, except when you face an
-          all-in, where it does the real pot-odds sum. After the flop it estimates the hands your opponents likely hold from what they did, works out your winning chance against them (exactly when that is quick,
+          all-in, where it does the real pot-odds sum, and heads-up with 12 big blinds or less, where it uses push/fold charts this app solved exactly (a Nash equilibrium for the game where the button only moves all-in or folds). After the flop it estimates the hands your opponents likely hold from what they did, works out your winning chance against them (exactly when that is quick,
           otherwise with a simulation), and compares simple expected-value estimates for folding, checking or calling, and betting or raising at one sensible size. That's good for learning fundamentals and
           catching clear errors. It's not solver-level, and it will sometimes differ from what a solver prefers.
         </p>

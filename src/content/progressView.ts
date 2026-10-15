@@ -13,6 +13,7 @@ export const CONCEPT_LABELS: Record<string, string> = {
   bluffing: 'Bluffing', 'bet-sizing': 'Bet sizing', cbet: 'Continuation bets', 'pot-control': 'Pot control', 'check-raise': 'Check-raising', 'player-types': 'Player types',
   exploits: 'Adjusting to opponents', 'implied-odds': 'Implied odds', 'reverse-implied': 'Reverse implied odds', mdf: 'Minimum defence', spr: 'Stack-to-pot ratio',
   'semi-bluff': 'Semi-bluffs', 'thin-value': 'Thin value', river: 'River decisions', variance: 'Variance', bankroll: 'Bankroll', tilt: 'Tilt', 'results-thinking': 'Decisions vs results',
+  'push-fold': 'Push or fold', rake: 'Rake',
 };
 
 export type MasteryLevel = 'new' | 'learning' | 'shaky' | 'mastered';

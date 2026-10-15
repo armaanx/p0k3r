@@ -6,6 +6,8 @@ import { PROFILES, ARCHETYPES } from '../../engine/bots';
 import { parseRange } from '../../engine/ranges';
 import { exactHitChance, ruleOf2And4 } from '../../engine/outs';
 import { breakEvenEquity } from '../../engine/coach/odds';
+import { chartPercent, chartRange, PF_DEPTHS, PF_EXPLOITABILITY, type PushFoldRole } from '../../engine/pushFold';
+import { rakeBreakEven } from '../../engine/learning/drills';
 import { useStore } from '../../state/store';
 import { Ladder, RangeGrid, SeatRing } from '../learn/visuals';
 import { positionOf } from '../../engine/preflopCharts';
@@ -47,6 +49,10 @@ function CheatSheet() {
   const d = (id: string): boolean => lessonDone(progress, id);
   const [pos, setPos] = useState<Position>('UTG');
   const grid = useMemo(() => new Set(pos === 'BB' ? [] : [...parseRange(OPEN_SPECS[pos as Exclude<Position, 'BB'>]).keys()]), [pos]);
+  const [pfRole, setPfRole] = useState<PushFoldRole>('shove');
+  const [pfDepth, setPfDepth] = useState(10);
+  const pfGrid = useMemo(() => new Set(chartRange(pfRole, pfDepth).keys()), [pfRole, pfDepth]);
+  const worstMbb = (Math.max(...PF_EXPLOITABILITY) * 1000).toFixed(1);
   return (
     <div className="cheat">
       <section className="card-panel">
@@ -112,6 +118,46 @@ function CheatSheet() {
         ) : <Locked lesson="m5-l3" />}
         <p className="muted small">You risk X (the call) to win Y (everything already in the pot, including their bet). Need = X ÷ (Y + X). Compare it with your real chance of winning.</p>
       </section>
+      <section className="card-panel wide">
+        <h2>Heads-up push or fold</h2>
+        {d('m10-l1') ? (
+          <>
+            <div className="toolbar" style={{ justifyContent: 'flex-start', marginTop: 0 }}>
+              <span className="seg" role="group" aria-label="Chart">
+                <button aria-pressed={pfRole === 'shove'} onClick={() => setPfRole('shove')}>Button: all-in</button>
+                <button aria-pressed={pfRole === 'call'} onClick={() => setPfRole('call')}>Big blind: call</button>
+              </span>
+            </div>
+            <label className="pf-depth">
+              <span>Effective stack: <b className="num">{pfDepth} big blinds</b></span>
+              <input type="range" min={PF_DEPTHS[0]} max={PF_DEPTHS[PF_DEPTHS.length - 1]} step={0.5} value={pfDepth} onChange={(e) => setPfDepth(Number(e.target.value))} aria-label="Effective stack in big blinds" />
+            </label>
+            <RangeGrid primary={pfGrid} primaryLabel={`${pfRole === 'shove' ? 'Moves all-in' : 'Calls an all-in'} at ${pfDepth}bb (${Math.round(chartPercent(pfRole, pfDepth))}% of hands)`} size={24} />
+          </>
+        ) : <Locked lesson="m10-l1" />}
+        <p className="muted small">
+          Nash equilibrium of heads-up push or fold (chip EV, no ante): the button only moves all-in or folds, the big blind only calls or folds. Computed by this app from the all-in equity of every pair of starting hands; against these charts a perfect opponent gains at most {worstMbb} thousandths of a big blind per hand.
+        </p>
+      </section>
+      <section className="card-panel">
+        <h2>Calling after rake</h2>
+        {d('m10-l2') ? (
+          <table className="ref-table">
+            <thead><tr><th scope="col">River: pot, then bet</th><th scope="col">No rake</th><th scope="col">5%, cap $3</th><th scope="col">5%, cap $5</th></tr></thead>
+            <tbody>
+              {RAKE_ROWS.map(([pot, bet]) => (
+                <tr key={`${pot}-${bet}`}>
+                  <td className="num">${pot}, ${bet}</td>
+                  <td className="num">{pct1(rakeBreakEven(pot, bet, 0, 0))}</td>
+                  <td className="num">{pct1(rakeBreakEven(pot, bet, 0.05, 3))}</td>
+                  <td className="num">{pct1(rakeBreakEven(pot, bet, 0.05, 5))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : <Locked lesson="m10-l2" />}
+        <p className="muted small">Chance of winning you need to call. Need = your call ÷ (final pot − rake). Pots that end before the flop usually pay no rake.</p>
+      </section>
       <section className="card-panel">
         <h2>Player types</h2>
         {d('m7-l1') ? (
@@ -150,6 +196,9 @@ const OUTS_ROWS: readonly (readonly [string, number])[] = [
 
 /** Bet sizes as a share of the pot before the bet. */
 const BET_ROWS: readonly (readonly [string, number])[] = [['¼ pot', 1 / 4], ['⅓ pot', 1 / 3], ['½ pot', 1 / 2], ['⅔ pot', 2 / 3], ['Full pot', 1], ['2× pot', 2]];
+
+/** River spots for the rake table: [pot before the bet, bet], in dollars. */
+const RAKE_ROWS: readonly (readonly [number, number])[] = [[20, 10], [40, 30], [60, 40], [100, 75], [200, 150]];
 
 const pct1 = (x: number): string => `${(x * 100).toFixed(1)}%`;
 

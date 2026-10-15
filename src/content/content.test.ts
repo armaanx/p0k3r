@@ -44,6 +44,7 @@ const INTRODUCED: [RegExp, number][] = [
   [/\bbluff/i, 4], [/\bkickers?\b/i, 1], [/\bpositions?\b/i, 2], [/\butg\b/i, 2], [/\btiers?\b/i, 3], [/\bsuited\b/i, 3], [/\boffsuit\b/i, 3],
   [/\bdraws?\b/i, 4], [/\bovercards?\b/i, 4], [/\btexture\b/i, 4], [/\btilt\b/i, 9], [/\bvariance\b/i, 9], [/\bbankroll\b/i, 9], [/\bvalue bet/i, 6],
   [/\bnit\b/i, 7], [/\bmaniac\b/i, 7], [/\btag\b/i, 7], [/\blag\b/i, 7], [/\bexploit/i, 7], [/\bthin value\b/i, 8], [/\bprotection\b/i, 6],
+  [/\brake\b/i, 10], [/\bnash\b/i, 10], [/\bpush or fold\b|\bpush\/fold\b/i, 10], [/\beffective stack\b/i, 8],
   [/\bcheck-raise\b/i, 6], [/\bpot control\b/i, 6], [/\bexpected value\b/i, 5], [/\brule of 2\b/i, 5], [/\bgutshot\b/i, 4], [/\bflush draw\b/i, 4],
 ];
 
@@ -62,7 +63,7 @@ describe('curriculum structure', () => {
       }
     }
     expect(seen.size).toBe(LESSONS.length);
-    expect(MODULES.map((m) => m.id)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(MODULES.map((m) => m.id)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   it('covers every module required by the brief (0–9)', () => {
@@ -155,7 +156,7 @@ describe('glossary', () => {
     for (const g of GLOSSARY) {
       expect(g.def.length).toBeGreaterThan(10);
       expect(g.module).toBeGreaterThanOrEqual(0);
-      expect(g.module).toBeLessThanOrEqual(9);
+      expect(g.module).toBeLessThanOrEqual(MODULES[MODULES.length - 1]!.id);
     }
   });
   it('covers every term the brief names', () => {
@@ -239,5 +240,22 @@ describe('module 7 player types match the practice bots', () => {
     expect(PROFILES.tag.vpip).toBeLessThanOrEqual(tightHi);
     for (const a of ['lag', 'station', 'maniac'] as const) expect(PROFILES[a].vpip, a).toBeGreaterThan(loose);
     expect(t).not.toMatch(/\(six players\)/);
+  });
+});
+
+describe('module 10 text matches the solved charts and the rake maths', () => {
+  it('every pair and every ace moves all-in at 5, 10, 15 and 20 big blinds (as m10-l1 says)', async () => {
+    const { inChart } = await import('../engine/pushFold');
+    const { ALL_LABELS } = await import('../engine/ranges');
+    const t = LESSON_BY_ID.get('m10-l1')!.steps.flatMap(textsOf).join('\n');
+    expect(t).toMatch(/Every pair and every ace moves all-in at all of these depths/);
+    for (const l of ALL_LABELS.filter((x) => x.length === 2 || x[0] === 'A')) for (const d of [5, 10, 15, 20]) expect(inChart('shove', l, d), `${l} ${d}`).toBe(true);
+  });
+  it('the rake worked example and fill-in step use the exact formula', async () => {
+    const { rakeBreakEven } = await import('../engine/learning/drills');
+    expect((rakeBreakEven(40, 30, 0.05, 5) * 100).toFixed(1)).toBe('31.6');
+    expect((rakeBreakEven(60, 40, 0.05, 3) * 100).toFixed(1)).toBe('29.2');
+    expect((0.31 * 100 - 30).toFixed(2)).toBe('1.00');
+    expect((0.31 * 95 - 30).toFixed(2)).toBe('-0.55');
   });
 });
