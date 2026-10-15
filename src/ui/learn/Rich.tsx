@@ -6,7 +6,7 @@ export function Term({ id, children }: { id: string; children?: ReactNode }) {
   const t = GLOSSARY_BY_ID.get(id);
   if (!t) return <>{children ?? id}</>;
   return (
-    <span className="term" tabIndex={0} role="button" aria-label={`${t.term}: ${t.def}`}>
+    <span className="term" tabIndex={0} role="button" aria-label={`${t.term}: ${t.def}`} onClick={(e) => e.currentTarget.focus()}>
       {children ?? t.term}
       <span className="term-pop" role="tooltip">
         <b>{t.term}</b>
@@ -20,7 +20,7 @@ const TOKEN = /(\*\*[^*]+\*\*|\[\[[^\]]+\]\])/g;
 
 function inline(text: string, keyBase: string): ReactNode[] {
   return text.split(TOKEN).filter((s) => s !== '').map((part, i) => {
-    if (part.startsWith('**')) return <b key={`${keyBase}${i}`}>{part.slice(2, -2)}</b>;
+    if (part.startsWith('**')) return <b key={`${keyBase}${i}`}>{inline(part.slice(2, -2), `${keyBase}${i}b`)}</b>; // glossary terms may sit inside bold text
     if (part.startsWith('[[')) {
       const [id, label] = part.slice(2, -2).split('|');
       return <Term key={`${keyBase}${i}`} id={id!}>{label}</Term>;
