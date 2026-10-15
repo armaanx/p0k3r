@@ -9,6 +9,7 @@ import { debugSet } from '../debug';
 import { Icon, Mark, TierTag } from '../Icon';
 import { Rich } from './Rich';
 import { DrillVisual, VisualView } from './visuals';
+import { focusInView } from '../focus';
 
 export interface DrillResult {
   correct: boolean;
@@ -202,7 +203,7 @@ export function DrillCard({ item, onDone, askConfidence, showTimer = true, nextL
             <div>
               <p><b>{elab.options[elabPick]!.good ? 'Sound reasoning.' : 'That reasoning has a gap.'}</b> {elab.options[elabPick]!.feedback}</p>
               {!elab.options[elabPick]!.good && <p><b>Better:</b> {elab.options.find((o) => o.good)!.text}</p>}
-              <button className="btn-primary" autoFocus onClick={() => finish(elab.options[elabPick]!.good ? 'good' : 'poor')}>{nextLabel}</button>
+              <button className="btn-primary" ref={focusInView} onClick={() => finish(elab.options[elabPick]!.good ? 'good' : 'poor')}>{nextLabel}</button>
             </div>
           )}
         </div>
@@ -216,7 +217,7 @@ export function DrillCard({ item, onDone, askConfidence, showTimer = true, nextL
             <TierTag tier={item.tier} />
           </div>
           <p>{grade.feedback}</p>
-          <button className="btn-primary" onClick={next} autoFocus>{nextLabel} <span className="faint">(Enter)</span></button>
+          <button className="btn-primary" onClick={next} ref={focusInView}>{nextLabel} <span className="faint">(Enter)</span></button>
         </div>
       )}
     </div>
@@ -278,7 +279,7 @@ export function QuizCard({ q, onDone, askConfidence, nextLabel = 'Continue', }: 
           <p>{q.options[picked]!.why}</p>
           {picked !== q.correct && <p><b>The answer:</b> {q.options[q.correct]!.text}</p>}
           <p className="muted small">{q.explain}</p>
-          <button className="btn-primary" onClick={done} autoFocus>{nextLabel} <span className="faint">(Enter)</span></button>
+          <button className="btn-primary" onClick={done} ref={focusInView}>{nextLabel} <span className="faint">(Enter)</span></button>
         </div>
       )}
     </div>

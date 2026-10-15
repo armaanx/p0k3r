@@ -3,6 +3,7 @@ import { dueCount } from '../../engine/learning/srs';
 import { dailyPlan } from '../../content/progressView';
 import { useStore } from '../../state/store';
 import { Icon } from '../Icon';
+import { focusQuiet } from '../focus';
 
 const go = (to: string): void => { window.location.hash = to; };
 
@@ -24,7 +25,7 @@ export function Welcome() {
           <li><b>Short daily practice.</b> About 15 minutes a day works better than one long session. There are no streak penalties: miss a day and nothing bad happens.</li>
         </ul>
         <div className="toolbar" style={{ justifyContent: 'flex-start' }}>
-          <button className="btn-primary big" onClick={() => start('/learn/m0-l1')} autoFocus>Start the first lesson</button>
+          <button className="btn-primary big" onClick={() => start('/learn/m0-l1')} ref={focusQuiet}>Start the first lesson</button>
           <button className="btn-ghost" onClick={() => start('/learn')}>I already know the basics</button>
         </div>
         <p className="faint small">Nothing to sign up for and nothing to configure. You can make the text or the cards bigger, turn sound on, or reduce motion any time under Display.</p>

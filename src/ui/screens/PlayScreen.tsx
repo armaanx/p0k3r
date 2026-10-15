@@ -19,6 +19,7 @@ import { CoachPanel, type LastDecision } from '../coach/CoachPanel';
 import { getCoach } from '../../workers/client';
 import { accuracyOf } from '../../content/practice';
 import { canon } from '../../engine/learning/analytics';
+import { focusQuiet, focusInView } from '../focus';
 
 const MAX_HANDS_KEPT = 300;
 
@@ -216,7 +217,7 @@ export function PlayScreen() {
             <p className="muted">
               You will play {settings.tableSize === 2 ? 'heads-up' : '6-player'} Texas Hold'em against bots with play-money chips. Press <b>Deal</b> (or the space bar) to start.
             </p>
-            <button className="btn-primary" onClick={deal} autoFocus>Deal</button>
+            <button className="btn-primary" onClick={deal} ref={focusQuiet}>Deal</button>
           </div>
         )}
 
@@ -237,7 +238,7 @@ export function PlayScreen() {
               </span>
             </div>
             <div className="toolbar" style={{ justifyContent: 'flex-start', marginTop: 0 }}>
-              <button className="btn-primary" onClick={deal} autoFocus>Deal next hand <span className="faint">(N)</span></button>
+              <button className="btn-primary" onClick={deal} ref={focusInView}>Deal next hand <span className="faint">(N)</span></button>
               {savedId && <button className="btn-quiet" onClick={() => { window.location.hash = `/review/${savedId}`; }}>Review this hand</button>}
             </div>
           </div>

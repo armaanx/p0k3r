@@ -8,6 +8,7 @@ import { useStore } from '../../state/store';
 import { ItemSequence } from '../learn/Sequence';
 import { LessonRunner } from '../learn/LessonRunner';
 import { Icon } from '../Icon';
+import { focusInView } from '../focus';
 
 const go = (to: string): void => { window.location.hash = to; };
 
@@ -164,9 +165,9 @@ function ModuleTestScreen({ moduleId }: { moduleId: number }) {
         <p className="big-score"><b className="num">{score}</b> / {items.length} <span className="muted small">(you need {need}, that is {Math.round(MASTERY_THRESHOLD * 100)}%)</span></p>
         <p className="muted">{passed ? (moduleId < 9 ? `The next module is unlocked. The questions you missed will come back in your daily review.` : 'You have finished the whole path. From here, practise with the drills and play with the coach.') : 'Your missed questions are scheduled for review. Revisit the lessons you found hardest, then try a fresh test: it uses new questions.'}</p>
         <div className="toolbar" style={{ justifyContent: 'flex-start' }}>
-          {passed ? <button className="btn-primary" onClick={() => go('/learn')} autoFocus>Back to the map</button> : (
+          {passed ? <button className="btn-primary" onClick={() => go('/learn')} ref={focusInView}>Back to the map</button> : (
             <>
-              <button className="btn-primary" onClick={() => { setResult(null); setAttempt((a) => a + 1); }} autoFocus>Try a fresh test</button>
+              <button className="btn-primary" onClick={() => { setResult(null); setAttempt((a) => a + 1); }} ref={focusInView}>Try a fresh test</button>
               <button className="btn-quiet" onClick={() => go('/learn')}>Back to the map</button>
             </>
           )}

@@ -16,6 +16,7 @@ import type { SeqItem } from '../../content/moduleTest';
 import { VarianceSim } from './VarianceSim';
 import { VisualView } from './visuals';
 import { Icon, Mark } from '../Icon';
+import { focusInView } from '../focus';
 
 function NewWords({ text }: { text: string }) {
   const { progress } = useStore();
@@ -59,7 +60,7 @@ function ReadLike({ step, onNext, children, nextLabel = 'Continue' }: { step: St
     <div>
       {children}
       <NewWords text={stepText(step)} />
-      <button className="btn-primary" onClick={go} autoFocus>{nextLabel} <span className="faint">(Enter)</span></button>
+      <button className="btn-primary" onClick={go} ref={focusInView}>{nextLabel} <span className="faint">(Enter)</span></button>
     </div>
   );
 }
@@ -111,7 +112,7 @@ function CompleteStep({ step, onNext }: { step: Extract<Step, { kind: 'complete'
           {picked !== null && (
             <div className={`feedback ${picked === b.correct ? 'feedback-ok' : 'feedback-bad'}`} role="status">
               <p><b>{picked === b.correct ? 'Yes.' : 'Not quite.'}</b> {b.why}</p>
-              <button className="btn-quiet" onClick={() => { setPicked(null); setIdx((x) => x + 1); }} autoFocus>Next</button>
+              <button className="btn-quiet" onClick={() => { setPicked(null); setIdx((x) => x + 1); }} ref={focusInView}>Next</button>
             </div>
           )}
         </div>
@@ -142,7 +143,7 @@ function WhyStep({ step, onNext }: { step: Extract<Step, { kind: 'why' }>; onNex
         <div className={`feedback ${step.options[picked]!.good ? 'feedback-ok' : 'feedback-bad'}`} role="status">
           <p><b>{step.options[picked]!.good ? 'Good reasoning.' : 'That reasoning has a flaw.'}</b> {step.options[picked]!.feedback}</p>
           {!step.options[picked]!.good && <p><b>Better:</b> {step.options.find((o) => o.good)!.text} {step.options.find((o) => o.good)!.feedback}</p>}
-          <button className="btn-primary" onClick={onNext} autoFocus>Continue <span className="faint">(Enter)</span></button>
+          <button className="btn-primary" onClick={onNext} ref={focusInView}>Continue <span className="faint">(Enter)</span></button>
         </div>
       )}
     </div>
@@ -171,10 +172,10 @@ function Outcome({ passed, score, total, need, tries, onRetry, onContinue, onRev
       <p className="muted">{passed ? 'That is mastery for this skill. It will come back in your daily review so it sticks.' : 'This is normal. Mistakes are how the skill is built. Have a look at the explanations, then try again with fresh questions.'}</p>
       <div className="toolbar" style={{ justifyContent: 'flex-start' }}>
         {passed ? (
-          <button className="btn-primary" onClick={onContinue} autoFocus>Continue</button>
+          <button className="btn-primary" onClick={onContinue} ref={focusInView}>Continue</button>
         ) : (
           <>
-            <button className="btn-primary" onClick={onRetry} autoFocus>Try again with new questions</button>
+            <button className="btn-primary" onClick={onRetry} ref={focusInView}>Try again with new questions</button>
             <button className="btn-quiet" onClick={onReview}>Re-read the lesson</button>
             {tries >= 3 && <button className="btn-ghost" onClick={onContinue}>Continue anyway</button>}
           </>
@@ -264,8 +265,8 @@ export function LessonRunner({ lessonId, onExit, onGoLesson }: { lessonId: strin
           <p className="muted">Goal reached: {lesson.goal}</p>
           <p>Your answers in this lesson are now on your review schedule. Items you missed come back soon; items you got right come back later and later.</p>
           <div className="toolbar" style={{ justifyContent: 'flex-start' }}>
-            {nextIdInModule && <button className="btn-primary" onClick={() => onGoLesson(nextIdInModule)} autoFocus>Next lesson: {LESSON_BY_ID.get(nextIdInModule)!.title}</button>}
-            {!nextIdInModule && allDone && !modState.testPassed && <button className="btn-primary" onClick={() => { window.location.hash = `/learn/test/${lesson.module}`; }} autoFocus>Take the Module {lesson.module} test</button>}
+            {nextIdInModule && <button className="btn-primary" onClick={() => onGoLesson(nextIdInModule)} ref={focusInView}>Next lesson: {LESSON_BY_ID.get(nextIdInModule)!.title}</button>}
+            {!nextIdInModule && allDone && !modState.testPassed && <button className="btn-primary" onClick={() => { window.location.hash = `/learn/test/${lesson.module}`; }} ref={focusInView}>Take the Module {lesson.module} test</button>}
             <button className="btn-quiet" onClick={onExit}>Back to the map</button>
           </div>
         </div>

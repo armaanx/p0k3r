@@ -12,6 +12,7 @@ import { useStore } from '../../state/store';
 import { CalibrationChart } from '../learn/CalibrationChart';
 import { ItemSequence } from '../learn/Sequence';
 import { Icon } from '../Icon';
+import { focusInView } from '../focus';
 
 const go = (to: string): void => { window.location.hash = to; };
 
@@ -64,7 +65,7 @@ export function DrillsScreen() {
         </ul>
         {missed.length > 0 ? <p className="muted">Missed items are now scheduled to come back soon, so they do not slip. Weakest this round: <b>{missed[0]![0]}</b>.</p> : <p className="muted">A clean round. Those items will return at longer intervals.</p>}
         <div className="toolbar" style={{ justifyContent: 'flex-start' }}>
-          <button className="btn-primary" onClick={() => { setResult(null); setSession(null); }} autoFocus>Back to drills</button>
+          <button className="btn-primary" onClick={() => { setResult(null); setSession(null); }} ref={focusInView}>Back to drills</button>
         </div>
       </div>
     );

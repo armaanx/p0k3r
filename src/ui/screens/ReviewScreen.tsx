@@ -16,6 +16,7 @@ import { CardRow } from '../learn/visuals';
 import { ActionBar } from '../table/ActionBar';
 import { Table } from '../table/Table';
 import { Icon, TierTag, VerdictChip } from '../Icon';
+import { focusInView } from '../focus';
 
 const go = (to: string): void => { window.location.hash = to; };
 
@@ -325,7 +326,7 @@ function SpotTrainer({ rec, actionIndex, onClose }: { rec: HandRecord; actionInd
                 : '"Value" is what the coach\'s model expects each option to win or lose on average from here. Folding is the zero line. It is an estimate, not a solver result.'}
             </p>
             <div className="toolbar" style={{ justifyContent: 'flex-start' }}>
-              <button className="btn-primary" onClick={retry} autoFocus>Try a different action</button>
+              <button className="btn-primary" onClick={retry} ref={focusInView}>Try a different action</button>
               <button className="btn-quiet" onClick={onClose}>Done</button>
             </div>
           </section>

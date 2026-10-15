@@ -9,6 +9,7 @@ import { ActionBar } from '../table/ActionBar';
 import { Table } from '../table/Table';
 import { Rich } from './Rich';
 import { Icon } from '../Icon';
+import { focusInView } from '../focus';
 
 // Seat 0 (you) is the big blind. Button = seat 4. Action order preflop: 1,2,3,4,5,0.
 interface ScriptStep {
@@ -107,9 +108,9 @@ export function ScriptedHand({ onComplete }: { onComplete: () => void }) {
           {over ? <Rich text={winnerText()} /> : <Rich text={step.say} />}
           {nudge && <p className="nudge-warn"><Icon name="alert" size={14} /> {nudge}</p>}
         </div>
-        {!over && step.seat !== 0 && <button className="btn-primary" onClick={runBot} autoFocus>Continue</button>}
+        {!over && step.seat !== 0 && <button className="btn-primary" onClick={runBot} ref={focusInView}>Continue</button>}
         {!over && step.seat === 0 && <p className="muted small">Use the buttons below the table (or the keyboard shortcut shown on the button).</p>}
-        {over && <button className="btn-primary" onClick={onComplete} autoFocus>Finish the hand</button>}
+        {over && <button className="btn-primary" onClick={onComplete} ref={focusInView}>Finish the hand</button>}
       </div>
       <Table hand={hand} session={sess} heroSeat={0} settings={settings} features={features} fmt={fmt} revealAll={over} winners={over ? [0] : []} />
       {legal && (
