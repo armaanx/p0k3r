@@ -62,7 +62,7 @@ interface HandRecord { seed; config; actions; heroSeat; grades: DecisionGrade[];
 interface DecisionGrade { street; verdict: 'great'|'fine'|'inaccuracy'|'mistake'|'blunder'; evLostBB; tier: 'math'|'standard'|'judgment'; why: string; concept: ConceptId }
 ```
 
-## 4. Curriculum outline (Modules 0–9)
+## 4. Curriculum outline (Modules 0–10)
 
 Each lesson = short explanation → active question(s) → worked example → partially-completed example → independent problems → mastery check. Each module ends with an interleaved test. One new concept per lesson.
 
@@ -78,6 +78,7 @@ Each lesson = short explanation → active question(s) → worked example → pa
 | 7 | Opponents | tight/loose × passive/aggressive, VPIP/PFR |
 | 8 | Intermediate | implied odds, MDF, SPR, semi-bluffs, fold equity, thin value, rivers |
 | 9 | Mental game | variance, tilt, bankroll, decisions vs results, review habits |
+| 10 | Short stacks and real games | heads-up push or fold (solved Nash charts), rake and the price of a call |
 
 Mastery gate: ≥85% over last 20 mixed items in the module (fewer items → proportionally scaled minimum of 10). "Skip ahead" allowed with warning.
 
