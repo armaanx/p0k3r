@@ -10,6 +10,7 @@ import {
   DEFEND_SPECS, POSITION_FULL_NAMES, TIER_BLURBS, TIER_NAMES, defendRanges_, facingRaiseVerdict, neighbourActions, openPercent, openRange, openVerdict,
   positionOf, tierOf, type Position, type PreflopAction,
 } from '../preflopCharts';
+import { chartEdgeBB, chartPercent, chartRange, inChart, isCloseCall, maxDepth, PF_DEPTHS, type PushFoldRole } from '../pushFold';
 import { ALL_LABELS, labelCombos, rangeLabels } from '../ranges';
 import type { Rng } from '../rng';
 import { classifyBoard, type BoardTexture } from '../texture';
@@ -967,6 +968,100 @@ function genSpr(rng: Rng, d: Diff): DrillItem {
 }
 
 // ---------------------------------------------------------------------------
+// Module 10: short stacks (heads-up push/fold) and rake
+// ---------------------------------------------------------------------------
+
+const PF_EASY_DEPTHS = [5, 8, 10, 12, 15, 20];
+
+/** "up to N big blinds" when the hand is in the chart at every stack up to N (some hands come and go). */
+function pfUpTo(role: PushFoldRole, label: string): number | null {
+  const m = maxDepth(role, label);
+  if (m === null) return null;
+  for (const d of PF_DEPTHS) if (d <= m && !inChart(role, label, d)) return null;
+  return m;
+}
+
+function genPushFold(rng: Rng, d: Diff): DrillItem {
+  const role: PushFoldRole = rng.next() < 0.55 ? 'shove' : 'call';
+  const depth = d === 1 ? rng.pick(PF_EASY_DEPTHS) : d === 2 ? 3 + rng.int(18) : PF_DEPTHS[1 + rng.int(PF_DEPTHS.length - 1)]!;
+  const wantIn = rng.next() < 0.5;
+  const label = randomLabelWhere(rng, (l) => {
+    if (inChart(role, l, depth) !== wantIn) return false;
+    const edge = Math.abs(chartEdgeBB(role, l, depth));
+    if (d === 1) return !isCloseCall(role, l, depth) && edge >= 0.3;
+    if (d === 2) return !isCloseCall(role, l, depth);
+    return edge < 1.2; // difficulty 3: hands near the edge of the chart
+  });
+  const inR = inChart(role, label, depth);
+  const close = isCloseCall(role, label, depth);
+  const edge = chartEdgeBB(role, label, depth);
+  const pct = Math.round(chartPercent(role, depth));
+  const options = role === 'shove' ? ['Move all-in', 'Fold'] : ['Call', 'Fold'];
+  const best = inR ? 0 : 1;
+  const upTo = pfUpTo(role, label);
+  const upToText = upTo !== null
+    ? inR ? ` It stays in the chart up to ${upTo} big blinds.` : ` It is only in the chart up to ${upTo} big blinds.`
+    : maxDepth(role, label) === null ? ' It is never in this chart.' : '';
+  const verb = role === 'shove' ? 'moves all-in' : 'calls';
+  const vsText = role === 'shove' ? 'Against a big blind who calls by the chart, moving all-in' : 'Against a button who moves all-in by the chart, calling';
+  const bucket = depth <= 8 ? 'short' : depth <= 14 ? 'mid' : 'deep';
+  return finish({
+    id: id('pf', rng), ...base('push-fold', 'push-fold', 10), spot: `pf:${role}:${bucket}`, difficulty: d,
+    prompt: role === 'shove'
+      ? `Heads-up. You are on the button (the small blind) and the effective stack is ${depth} big blinds. You may only move all-in or fold. What does the push/fold chart do?`
+      : `Heads-up. You are in the big blind, the effective stack is ${depth} big blinds, and the button moves all-in. What does the push/fold chart do?`,
+    visual: { hole: holeFor(rng, label), note: `Heads-up, ${depth} big blinds`, grid: { primary: rangeLabels(chartRange(role, depth)), primaryLabel: `${role === 'shove' ? 'Moves all-in' : 'Calls'} at ${depth}bb`, focus: label } },
+    input: choiceInput(options), answer: close ? [0, 1] : [best], bestIndex: best,
+    wrong: { [1 - best]: inR ? `${label} is in the ${depth}bb chart: folding gives up chips.` : `${label} is not in the ${depth}bb chart: ${role === 'shove' ? 'moving all-in' : 'calling'} loses chips on average.` },
+    explanation: `At ${depth} big blinds the chart ${verb} with about ${pct}% of hands, and ${label} ${inR ? 'is' : 'is not'} one of them.${upToText} ${vsText} earns about ${Math.abs(edge).toFixed(2)} big blinds ${edge >= 0 ? 'more' : 'less'} than folding.${close ? ' That is very close, so either answer is fine.' : ''}`,
+    tier: 'standard', seconds: 12,
+  });
+}
+
+/** Rake taken from a final pot. */
+export const rakeOf = (pot: number, rate: number, cap: number): number => Math.min(Math.round(pot * rate * 100) / 100, cap);
+/** Equity needed to call a river bet when the winner pays rake: risk B to win the final pot minus rake. */
+export const rakeBreakEven = (potBefore: number, bet: number, rate: number, cap: number): number => {
+  const total = potBefore + 2 * bet;
+  return bet / (total - rakeOf(total, rate, cap));
+};
+
+const money = (x: number): string => (Number.isInteger(x) ? `$${x}` : `$${x.toFixed(2)}`);
+
+function genRake(rng: Rng, d: Diff): DrillItem {
+  const [rate, cap] = d === 3 ? rng.pick([[0.05, 3], [0.1, 4], [0.05, 5]] as const) : [0.05, d === 1 ? 10 : rng.pick([3, 4, 5])];
+  for (;;) {
+    const pot = d === 1 ? rng.pick([20, 30, 40, 50, 60]) : rng.pick([20, 30, 40, 50, 60, 80, 100, 120]);
+    const bet = Math.round(pot * rng.pick([0.5, 2 / 3, 0.75, 1]));
+    const total = pot + 2 * bet;
+    const rake = rakeOf(total, rate, cap);
+    const need = rakeBreakEven(pot, bet, rate, cap);
+    const show = (x: number): string => `${(x * 100).toFixed(1)}%`;
+    const cands: { x: string; why?: string }[] = [
+      { x: show(need) },
+      { x: show(bet / total), why: `${show(bet / total)} ignores the rake: it is the price before the house takes its cut.` },
+      { x: show(bet / (pot + bet)), why: `${show(bet / (pot + bet))} leaves your own call out of the final pot.` },
+      ...(rate * total > cap ? [{ x: show(bet / (total - rate * total)), why: `${show(bet / (total - rate * total))} forgets the cap: the rake stops at ${money(cap)}.` }] : []),
+      { x: show(bet / (total - 2 * rake)), why: `${show(bet / (total - 2 * rake))} takes the rake twice. It comes out of the final pot once.` },
+    ];
+    const uniq: { x: string; why?: string }[] = [];
+    for (const c of cands) if (!uniq.some((u) => u.x === c.x) && uniq.length < 4) uniq.push(c);
+    if (uniq.length < 3) continue;
+    const ch = shuffleOptions(rng, uniq.map((u) => u.x), 0);
+    const wrong: Record<number, string> = {};
+    uniq.forEach((u, k) => { if (k > 0 && u.why) wrong[ch.map[k]!] = u.why; });
+    const capText = rate * total > cap ? `${Math.round(rate * 100)}% of ${money(total)} would be ${money(Math.round(rate * total * 100) / 100)}, but the cap is ${money(cap)}` : `${Math.round(rate * 100)}% of ${money(total)} is ${money(rake)}`;
+    return finish({
+      id: id('rake', rng), ...base('rake', 'rake', 10), spot: rate * total > cap ? 'rake:capped' : 'rake:percent', difficulty: d,
+      prompt: `Cash game with a rake of ${Math.round(rate * 100)}% of the pot, capped at ${money(cap)}. On the river the pot is ${money(pot)} and your opponent bets ${money(bet)}. After rake, what chance of winning do you need to call?`,
+      visual: { pot: pot + bet, bet }, input: choiceInput(ch.options), answer: [ch.correct], wrong,
+      explanation: `If you call, the pot is ${money(pot)} + ${money(bet)} + ${money(bet)} = ${money(total)}. Rake: ${capText}. The winner gets ${money(Math.round((total - rake) * 100) / 100)}, so you need ${money(bet)} ÷ ${money(Math.round((total - rake) * 100) / 100)} = ${show(need)}, up from ${show(bet / total)} without rake.`,
+      tier: 'math', seconds: 25,
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -987,20 +1082,22 @@ const GENERATORS: Record<DrillType, (rng: Rng, d: Diff) => DrillItem> = {
   'player-type': genPlayerType,
   mdf: genMdf,
   spr: genSpr,
+  'push-fold': genPushFold,
+  rake: genRake,
 };
 
 export const ALL_DRILL_TYPES = Object.keys(GENERATORS) as DrillType[];
 
 export const DRILL_MODULE: Record<DrillType, number> = {
   'hand-category': 1, 'rank-winner': 1, 'best-five': 1, 'position-name': 2, 'tier-place': 3, 'open-fold': 3, 'facing-raise': 3,
-  'made-draw-air': 4, 'board-texture': 4, outs: 5, 'pot-odds': 5, 'equity-guess': 5, 'bet-size': 6, 'player-type': 7, mdf: 8, spr: 8,
+  'made-draw-air': 4, 'board-texture': 4, outs: 5, 'pot-odds': 5, 'equity-guess': 5, 'bet-size': 6, 'player-type': 7, mdf: 8, spr: 8, 'push-fold': 10, rake: 10,
 };
 
 export const DRILL_LABELS: Record<DrillType, string> = {
   'hand-category': 'Name the hand', 'rank-winner': 'Who wins?', 'best-five': 'Best five of seven', 'position-name': 'Name the seat',
   'tier-place': 'Hand tiers', 'open-fold': 'Open or fold', 'facing-raise': 'Facing a raise', 'made-draw-air': 'Made, draw, or nothing',
   'board-texture': 'Read the board', outs: 'Count the outs', 'pot-odds': 'Pot odds', 'equity-guess': 'Guess the equity',
-  'bet-size': 'Bet sizing', 'player-type': 'Name that player', mdf: 'Defence frequency', spr: 'Stack-to-pot ratio',
+  'bet-size': 'Bet sizing', 'player-type': 'Name that player', mdf: 'Defence frequency', spr: 'Stack-to-pot ratio', 'push-fold': 'Push or fold', rake: 'Pot odds after rake',
 };
 
 export function generateDrill(type: DrillType, rng: Rng, difficulty: Diff = 1): DrillItem {

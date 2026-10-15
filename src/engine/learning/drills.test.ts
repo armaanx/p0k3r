@@ -469,7 +469,7 @@ function verify(it: DrillItem, seen: Map<string, number>, opts: { equity: boolea
   if (it.input.kind === 'choice') {
     const o = it.input.options;
     if (new Set(o.map((x) => x.toLowerCase())).size !== o.length) fail(it, 'duplicate options');
-    const multi = it.type === 'bet-size' || ((it.type === 'open-fold' || it.type === 'facing-raise') && it.answer.length > 1);
+    const multi = it.type === 'bet-size' || ((it.type === 'open-fold' || it.type === 'facing-raise' || it.type === 'push-fold') && it.answer.length > 1);
     if (!multi && it.answer.length !== 1) fail(it, 'not exactly one correct option');
     o.forEach((_, j) => { if (gradeDrill(it, j).correct !== it.answer.includes(j)) fail(it, 'grade mismatch'); });
   }
@@ -778,5 +778,44 @@ describe('drill generators: independent re-verification', () => {
     for (const k of ['outs:flush:d1', 'outs:oesd:d1', 'outs:gutshot:d1', 'outs:dgut:d2', 'outs:overcards:d2', 'outs:combo:d3', 'outs-risky', 'tie-board', 'tie-hands', 'winner-same-category', 'board-made-nothing', 'facing-raise-marginal']) {
       expect(seen.get(k) ?? 0, k).toBeGreaterThan(0);
     }
+  });
+});
+
+
+describe('module 10 drills', () => {
+  it('push-fold: the answer is the Nash chart, close hands accept both answers', async () => {
+    const { inChart, isCloseCall } = await import('../pushFold');
+    const rng = createRng(31);
+    for (let i = 0; i < 300; i++) {
+      const d = (1 + (i % 3)) as 1 | 2 | 3;
+      const it = generateDrill('push-fold', rng, d);
+      const role = it.spot.startsWith('pf:shove') ? 'shove' : 'call';
+      const depth = Number(/stack is ([\d.]+) big blinds/.exec(it.prompt)![1]);
+      const label = it.visual.grid!.focus!;
+      const inR = inChart(role, label, depth);
+      expect(it.bestIndex).toBe(inR ? 0 : 1);
+      expect(it.answer.length).toBe(isCloseCall(role, label, depth) ? 2 : 1);
+      if (d < 3) expect(isCloseCall(role, label, depth)).toBe(false);
+      expect(it.visual.grid!.primary.includes(label)).toBe(inR);
+    }
+  });
+
+  it('rake: the answer is bet ÷ (final pot − capped rake)', () => {
+    const rng = createRng(32);
+    for (let i = 0; i < 300; i++) {
+      const it = generateDrill('rake', rng, (1 + (i % 3)) as 1 | 2 | 3);
+      const m = /rake of (\d+)% of the pot, capped at \$(\d+)\. On the river the pot is \$(\d+) and your opponent bets \$(\d+)/.exec(it.prompt)!;
+      const [rate, cap, pot, bet] = [Number(m[1]) / 100, Number(m[2]), Number(m[3]), Number(m[4])];
+      const total = pot + 2 * bet;
+      const need = bet / (total - Math.min(rate * total, cap));
+      expect(it.input.kind === 'choice' && it.input.options[it.answer[0]!]).toBe(`${(need * 100).toFixed(1)}%`);
+      expect(need).toBeGreaterThan(bet / total); // rake always raises the bar
+    }
+  });
+
+  it('rake: the worked example from the lesson (pot $40, bet $30, 5% capped at $5) needs 31.6%, not 30%', async () => {
+    const { rakeBreakEven } = await import('./drills');
+    expect(rakeBreakEven(40, 30, 0.05, 5)).toBeCloseTo(30 / 95, 10);
+    expect(rakeBreakEven(40, 30, 0, 0)).toBeCloseTo(0.3, 10);
   });
 });

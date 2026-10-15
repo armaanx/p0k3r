@@ -12,19 +12,19 @@ import type { SeqItem } from './moduleTest';
 export const DRILL_UNLOCK: Record<DrillType, string> = {
   'hand-category': 'm1-l1', 'best-five': 'm1-l2', 'rank-winner': 'm1-l3', 'position-name': 'm2-l1', 'tier-place': 'm3-l1', 'open-fold': 'm3-l2',
   'facing-raise': 'm3-l4', 'made-draw-air': 'm4-l1', 'board-texture': 'm4-l2', outs: 'm5-l1', 'pot-odds': 'm5-l3', 'equity-guess': 'm5-l4',
-  'bet-size': 'm6-l2', 'player-type': 'm7-l1', mdf: 'm8-l2', spr: 'm8-l3',
+  'bet-size': 'm6-l2', 'player-type': 'm7-l1', mdf: 'm8-l2', spr: 'm8-l3', 'push-fold': 'm10-l1', rake: 'm10-l2',
 };
 
 export const TYPE_CONCEPT: Record<DrillType, string> = {
   'hand-category': 'hand-rankings', 'rank-winner': 'hand-rankings', 'best-five': 'best-five', 'position-name': 'position', 'tier-place': 'hand-tiers',
   'open-fold': 'open-range', 'facing-raise': 'facing-raise', 'made-draw-air': 'hand-strength', 'board-texture': 'board-texture', outs: 'outs',
-  'pot-odds': 'pot-odds', 'equity-guess': 'equity', 'bet-size': 'bet-sizing', 'player-type': 'player-types', mdf: 'mdf', spr: 'spr',
+  'pot-odds': 'pot-odds', 'equity-guess': 'equity', 'bet-size': 'bet-sizing', 'player-type': 'player-types', mdf: 'mdf', spr: 'spr', 'push-fold': 'push-fold', rake: 'rake',
 };
 
 const SPOT_PREFIX: [string, DrillType][] = [
   ['rank:', 'hand-category'], ['winner:', 'rank-winner'], ['best5:', 'best-five'], ['seat:', 'position-name'], ['tier:', 'tier-place'], ['open:', 'open-fold'],
   ['vs:', 'facing-raise'], ['mda:', 'made-draw-air'], ['tex:', 'board-texture'], ['outs:', 'outs'], ['odds:', 'pot-odds'], ['equity:', 'equity-guess'],
-  ['size:', 'bet-size'], ['ptype:', 'player-type'], ['mdf:', 'mdf'], ['spr:', 'spr'],
+  ['size:', 'bet-size'], ['ptype:', 'player-type'], ['mdf:', 'mdf'], ['spr:', 'spr'], ['pf:', 'push-fold'], ['rake:', 'rake'],
 ];
 
 export const availableDrillTypes = (p: Progress): DrillType[] => ALL_DRILL_TYPES.filter((t) => lessonDone(p, DRILL_UNLOCK[t]));

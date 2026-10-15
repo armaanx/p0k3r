@@ -18,7 +18,9 @@ export type DrillType =
   | 'bet-size'
   | 'player-type'
   | 'mdf'
-  | 'spr';
+  | 'spr'
+  | 'push-fold'
+  | 'rake';
 
 export interface Visual {
   hole?: Card[];
